@@ -1,12 +1,12 @@
 const Product = require('../models/product');
 
 exports.getProducts = (req, res, next) => {
-  Product.findAll()
+  Product.fetchAll()
     .then(products => {
       res.render('shop/product-list', {
         prods: products,
         pageTitle: 'All Products',
-        path: '/products'
+        path: '/products',
       });
     })
     .catch(err => {
@@ -25,24 +25,25 @@ exports.getProduct = (req, res, next) => {
   //     });
   //   })
   //   .catch(err => console.log(err));
+
   Product.findById(prodId)
     .then(product => {
       res.render('shop/product-detail', {
         product: product,
         pageTitle: product.title,
-        path: '/products'
+        path: '/products',
       });
     })
     .catch(err => console.log(err));
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.findAll()
+  Product.fetchAll()
     .then(products => {
       res.render('shop/index', {
         prods: products,
         pageTitle: 'Shop',
-        path: '/'
+        path: '/',
       });
     })
     .catch(err => {
@@ -60,7 +61,7 @@ exports.getCart = (req, res, next) => {
           res.render('shop/cart', {
             path: '/cart',
             pageTitle: 'Your Cart',
-            products: products
+            products: products,
           });
         })
         .catch(err => console.log(err));
@@ -93,7 +94,7 @@ exports.postCart = (req, res, next) => {
     })
     .then(product => {
       return fetchedCart.addProduct(product, {
-        through: { quantity: newQuantity }
+        through: { quantity: newQuantity },
       });
     })
     .then(() => {
@@ -151,12 +152,12 @@ exports.postOrder = (req, res, next) => {
 
 exports.getOrders = (req, res, next) => {
   req.user
-    .getOrders({include: ['products']})
+    .getOrders({ include: ['products'] })
     .then(orders => {
       res.render('shop/orders', {
         path: '/orders',
         pageTitle: 'Your Orders',
-        orders: orders
+        orders: orders,
       });
     })
     .catch(err => console.log(err));
