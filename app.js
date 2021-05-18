@@ -1,9 +1,9 @@
 const path = require('path');
 const User = require('./models/user');
-
 const express = require('express');
 const bodyParser = require('body-parser');
-const { mongoConnect } = require('./util/database');
+const mongoose = require('mongoose');
+require('dotenv').config();
 
 const app = express();
 
@@ -31,7 +31,12 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect(() => {
-  console.log();
-  app.listen(3000);
-});
+try {
+  mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  app.listen(3000, () => console.log('Connected!'));
+} catch (err) {
+  console.log(err);
+}
