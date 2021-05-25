@@ -13,12 +13,14 @@ exports.postAddProduct = async (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
+  const userId = req.user._id;
   try {
     await Product.create({
       title,
       price,
       description,
       imageUrl,
+      userId,
     });
     console.log('Created Product');
     res.redirect('/admin/products');
@@ -74,6 +76,8 @@ exports.postEditProduct = async (req, res, next) => {
 exports.getProducts = async (req, res, next) => {
   try {
     const products = await Product.find();
+    //.select('title price -_id')
+    //.populate('userId', 'name'); popula o campo userId com o nome apenas
     res.render('admin/products', {
       prods: products,
       pageTitle: 'Admin Products',
