@@ -35,6 +35,16 @@ app.use(
   })
 );
 
+app.use(async (req, res, next) => {
+  try {
+    const user = await User.findById(req.session.user);
+    req.user = user;
+    next();
+  } catch (err) {
+    console.log(err);
+  }
+});
+
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
