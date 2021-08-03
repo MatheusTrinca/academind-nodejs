@@ -1,19 +1,21 @@
 const path = require('path');
-const User = require('./models/user');
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
-require('dotenv').config();
 
-const MONGO_URI =
-  'mongodb+srv://matheus:nKaRQ9yS7flsWZV8@cluster0.9nli6.mongodb.net/shop';
+const errorController = require('./controllers/error');
+const User = require('./models/user');
+
+const MONGODB_URI =
+  'mongodb+srv://maximilian:9u4biljMQc4jjqbe@cluster0-ntrwp.mongodb.net/shop';
 
 const app = express();
 const store = new MongoDBStore({
-  uri: MONGO_URI,
-  collection: 'sessions',
+  uri: MONGODB_URI,
+  collection: 'sessions'
 });
 
 app.set('view engine', 'ejs');
@@ -22,52 +24,53 @@ app.set('views', 'views');
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
-const errorController = require('./controllers/error');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(
   session({
-    secret: 'my_secret',
+    secret: 'my secret',
     resave: false,
     saveUninitialized: false,
-    store: store,
+    store: store
   })
 );
 
-app.use(async (req, res, next) => {
-  try {
-    const user = await User.findById(req.session.user);
-    req.user = user;
-    next();
-  } catch (err) {
-    console.log(err);
+app.use((req, res, next) => {
+  if (!req.session.user) {
+    return next();
   }
+  User.findById(req.session.user._id)
+    .then(user => {
+      req.user = user;
+      next();
+    })
+    .catch(err => console.log(err));
 });
 
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
+
 app.use(errorController.get404);
 
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-  })
+  .connect(MONGODB_URI)
   .then(result => {
     User.findOne().then(user => {
       if (!user) {
-        User.create({
-          name: 'Matheus',
-          email: 'matheus@test.com',
+        const user = new User({
+          name: 'Max',
+          email: 'max@test.com',
           cart: {
-            items: [],
-          },
+            items: []
+          }
         });
+        user.save();
       }
     });
-    app.listen(3000, () => console.log('Connected!'));
+    app.listen(3000);
   })
-  .catch(err => console.log(err));
+  .catch(err => {
+    console.log(err);
+  });

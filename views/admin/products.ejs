@@ -20,7 +20,7 @@
                                 </div>
                                 <div class="card__content">
                                     <h2 class="product__price">$
-                                        <%= product.price.toFixed(2) %>
+                                        <%= product.price %>
                                     </h2>
                                     <p class="product__description">
                                         <%= product.description %>
@@ -32,6 +32,7 @@
                                         <input type="hidden" value="<%= product._id %>" name="productId">
                                         <button class="btn" type="submit">Delete</button>
                                     </form>
+
                                 </div>
                             </article>
                             <% } %>
