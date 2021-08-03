@@ -30,7 +30,24 @@ exports.postLogin = async (req, res, next) => {
   }
 };
 
-exports.postSignup = (req, res, next) => {};
+exports.postSignup = async (req, res, next) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const confirmPassword = req.body.confirmPassword;
+  try {
+    const user = await User.findOne({ email: email });
+    if (user) return res.redirect('/signup');
+    const newUser = new User({
+      email: email,
+      password: password,
+      cart: { items: [] },
+    });
+    await newUser.save();
+    res.redirect('/login');
+  } catch (err) {
+    console.log(err);
+  }
+};
 
 exports.postLogout = (req, res, next) => {
   req.session.destroy(err => {
