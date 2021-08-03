@@ -16,17 +16,18 @@ exports.getSignup = (req, res, next) => {
   });
 };
 
-exports.postLogin = (req, res, next) => {
-  User.findById('60abfb034330950520b26749')
-    .then(user => {
-      req.session.isLoggedIn = true;
-      req.session.user = user;
-      req.session.save(err => {
-        console.log(err);
-        res.redirect('/');
-      });
-    })
-    .catch(err => console.log(err));
+exports.postLogin = async (req, res, next) => {
+  try {
+    const user = await User.findById('60abfb034330950520b26749');
+    req.session.isLoggedIn = true;
+    req.session.user = user;
+    req.session.save(err => {
+      console.log(err);
+      res.redirect('/');
+    });
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 exports.postSignup = (req, res, next) => {};
