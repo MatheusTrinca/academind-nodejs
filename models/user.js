@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const Schema = mongoose.Schema;
 
@@ -59,6 +60,16 @@ userSchema.methods.removeFromCart = function (productId) {
 userSchema.methods.clearCart = function () {
   this.cart = { items: [] };
   return this.save();
+};
+
+userSchema.pre('save', async function (req, res, next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+userSchema.methods.correctPassword = async function (candidate, userPassword) {
+  return await bcrypt.compare(candidate, userPassword);
 };
 
 module.exports = mongoose.model('User', userSchema);

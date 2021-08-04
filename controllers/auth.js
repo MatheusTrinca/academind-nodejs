@@ -16,15 +16,22 @@ exports.getSignup = (req, res, next) => {
   });
 };
 
+const setSession = async (req, res, user, redirectTo) => {
+  req.session.isLoggedIn = true;
+  req.session.user = user;
+  await req.session.save();
+  res.redirect(redirectTo);
+};
+
 exports.postLogin = async (req, res, next) => {
+  const { email, password } = req.body;
   try {
-    const user = await User.findById('60abfb034330950520b26749');
-    req.session.isLoggedIn = true;
-    req.session.user = user;
-    req.session.save(err => {
-      console.log(err);
-      res.redirect('/');
-    });
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) return res.redirect('/login');
+    if (!(await user.correctPassword(password, user.password))) {
+      return res.redirect('/login');
+    }
+    await setSession(req, res, user, '/');
   } catch (err) {
     console.log(err);
   }
@@ -43,15 +50,13 @@ exports.postSignup = async (req, res, next) => {
       cart: { items: [] },
     });
     await newUser.save();
-    res.redirect('/login');
+    await setSession(req, res, user, '/');
   } catch (err) {
     console.log(err);
   }
 };
 
-exports.postLogout = (req, res, next) => {
-  req.session.destroy(err => {
-    console.log(err);
-    res.redirect('/');
-  });
+exports.postLogout = async (req, res, next) => {
+  await req.session.destroy();
+  res.redirect('/');
 };
