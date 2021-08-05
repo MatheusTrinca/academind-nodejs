@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const Email = require('../util/email');
 
 exports.getLogin = (req, res, next) => {
   const message = req.flash('error');
@@ -62,6 +63,7 @@ exports.postSignup = async (req, res, next) => {
     });
     await newUser.save();
     await setSession(req, res, user, '/');
+    await new Email(newUser).sendWelcome();
   } catch (err) {
     console.log(err);
   }
