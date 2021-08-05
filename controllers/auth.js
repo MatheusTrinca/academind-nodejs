@@ -73,3 +73,12 @@ exports.postLogout = async (req, res, next) => {
   await req.session.destroy();
   res.redirect('/');
 };
+
+exports.getReset = (req, res, next) => {
+  const message = req.flash('error');
+  res.render('auth/reset', {
+    path: '/reset',
+    pageTitle: 'Reset Password',
+    errorMessage: message.length > 0 ? message[0] : null,
+  });
+};
