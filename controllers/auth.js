@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const Email = require('../util/email');
+const generateToken = require('../util/generateToken');
 
 exports.getLogin = (req, res, next) => {
   const message = req.flash('error');
@@ -81,4 +82,22 @@ exports.getReset = (req, res, next) => {
     pageTitle: 'Reset Password',
     errorMessage: message.length > 0 ? message[0] : null,
   });
+};
+
+exports.postReset = async (req, res, next) => {
+  try {
+    const token = await generateToken();
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      req.flash('error', 'User email does not exists.');
+      return res.redirect('/reset');
+    }
+    user.resetToken = token;
+    user.resetTokenExpiration = Date.now() + 3600000; // 1 hora
+    await user.save();
+    await new Email(user).passwordReset(token);
+    return res.redirect('/');
+  } catch (err) {
+    console.log(err);
+  }
 };

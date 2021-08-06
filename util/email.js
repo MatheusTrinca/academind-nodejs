@@ -29,4 +29,11 @@ module.exports = class Email {
   async sendWelcome() {
     await this.send('Welcome to Shop', '<h2>Welcome!!</h2>');
   }
+  async passwordReset(token) {
+    const html = `
+      <p>You request a password reset</p>
+      <p>Click this <a href=http://localhost:3000/reset/${token}>link</a> to set a new password.</p>
+    `;
+    await this.send('Password Reset Token', html);
+  }
 };
