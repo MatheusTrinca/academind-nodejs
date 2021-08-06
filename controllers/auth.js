@@ -101,3 +101,23 @@ exports.postReset = async (req, res, next) => {
     console.log(err);
   }
 };
+
+exports.getNewPassword = async (req, res, next) => {
+  const token = req.params.token;
+
+  try {
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiration: { $gt: Date.now() },
+    });
+    const message = req.flash('error');
+    res.render('auth/new-password', {
+      path: '/new-password',
+      pageTitle: 'Reset Password',
+      errorMessage: message.length > 0 ? message[0] : null,
+      userId: user._id.toString(),
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};

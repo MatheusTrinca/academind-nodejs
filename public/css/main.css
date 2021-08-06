@@ -250,6 +250,7 @@ form {
 
 .user-message--error {
   border-color: red;
+  color: red;
   background-color: rgb(255, 174, 174);
 }
 
