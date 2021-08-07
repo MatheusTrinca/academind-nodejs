@@ -10,6 +10,11 @@ exports.getLogin = (req, res, next) => {
     pageTitle: 'Login',
     isAuthenticated: false,
     errorMessage: message.length > 0 ? message[0] : null,
+    oldInputs: {
+      email: '',
+      password: '',
+    },
+    validationErrors: [],
   });
 };
 
@@ -20,6 +25,12 @@ exports.getSignup = (req, res, next) => {
     pageTitle: 'Signup',
     isAuthenticated: false,
     errorMessage: message.length > 0 ? message[0] : null,
+    oldInputs: {
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    validationErrors: [],
   });
 };
 
@@ -32,6 +43,20 @@ const setSession = async (req, res, user, redirectTo) => {
 
 exports.postLogin = async (req, res, next) => {
   const { email, password } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render('auth/login', {
+      path: '/login',
+      pageTitle: 'Login',
+      isAuthenticated: false,
+      errorMessage: errors.array()[0].msg,
+      oldInputs: {
+        email,
+        password,
+      },
+      validationErrors: errors.array(),
+    });
+  }
   try {
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
@@ -51,7 +76,6 @@ exports.postLogin = async (req, res, next) => {
 exports.postSignup = async (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  const confirmPassword = req.body.confirmPassword;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.render('auth/signup', {
@@ -59,22 +83,22 @@ exports.postSignup = async (req, res, next) => {
       pageTitle: 'Signup',
       isAuthenticated: false,
       errorMessage: errors.array()[0].msg,
+      oldInputs: {
+        email,
+        password,
+        confirmPassword: req.body.confirmPassword,
+      },
+      validationErrors: errors.array(),
     });
   }
-
   try {
-    const user = await User.findOne({ email: email });
-    if (user) {
-      req.flash('error', 'Email already exists');
-      return res.redirect('/signup');
-    }
     const newUser = new User({
       email: email,
       password: password,
       cart: { items: [] },
     });
     await newUser.save();
-    await setSession(req, res, user, '/');
+    await setSession(req, res, newUser, '/');
     await new Email(newUser).sendWelcome();
   } catch (err) {
     console.log(err);
@@ -92,10 +116,22 @@ exports.getReset = (req, res, next) => {
     path: '/reset',
     pageTitle: 'Reset Password',
     errorMessage: message.length > 0 ? message[0] : null,
+    validationErrors: [],
+    oldInputs: { email: '' },
   });
 };
 
 exports.postReset = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.render('auth/reset', {
+      path: '/reset',
+      pageTitle: 'Reset Password',
+      validationErrors: errors.array(),
+      errorMessage: errors.array()[0].msg,
+      oldInputs: { email: req.body.email },
+    });
+  }
   try {
     const token = await generateToken();
     const user = await User.findOne({ email: req.body.email });
@@ -136,8 +172,13 @@ exports.getNewPassword = async (req, res, next) => {
 
 exports.postNewPassword = async (req, res, next) => {
   const { password, confirmPassword, userId, passwordToken } = req.body;
-
-  console.log(password, userId, passwordToken);
+  if (password !== confirmPassword || password.length < 5) {
+    req.flash(
+      'error',
+      'There was an error updating password, check your email again'
+    );
+    return res.redirect('/login');
+  }
   try {
     const user = await User.findOne({
       _id: userId,

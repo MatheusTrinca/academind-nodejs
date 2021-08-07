@@ -10,10 +10,15 @@
         <% if (errorMessage) { %>
             <div class="user-message user-message--error"><%= errorMessage %></div>
         <% } %> 
-        <form class="login-form" action="/reset" method="POST">
+        <form class="login-form" action="/reset" method="POST" novalidate>
             <div class="form-control">
                 <label for="email">E-Mail</label>
-                <input type="email" name="email" id="email">
+                <input 
+                    type="email" 
+                    name="email" 
+                    id="email"
+                    class="<%= validationErrors.find(e => e.param === 'email') ? 'invalid' : '' %> "
+                >
             </div>
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button class="btn" type="submit">Reset</button>
