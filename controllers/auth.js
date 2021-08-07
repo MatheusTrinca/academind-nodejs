@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const Email = require('../util/email');
 const generateToken = require('../util/generateToken');
+const { validationResult } = require('express-validator');
 
 exports.getLogin = (req, res, next) => {
   const message = req.flash('error');
@@ -51,6 +52,16 @@ exports.postSignup = async (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
   const confirmPassword = req.body.confirmPassword;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.render('auth/signup', {
+      path: '/signup',
+      pageTitle: 'Signup',
+      isAuthenticated: false,
+      errorMessage: errors.array()[0].msg,
+    });
+  }
+
   try {
     const user = await User.findOne({ email: email });
     if (user) {
