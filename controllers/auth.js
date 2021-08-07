@@ -45,7 +45,7 @@ exports.postLogin = async (req, res, next) => {
   const { email, password } = req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.render('auth/login', {
+    return res.status(422).render('auth/login', {
       path: '/login',
       pageTitle: 'Login',
       isAuthenticated: false,
@@ -69,7 +69,9 @@ exports.postLogin = async (req, res, next) => {
     }
     await setSession(req, res, user, '/');
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
 
@@ -78,7 +80,7 @@ exports.postSignup = async (req, res, next) => {
   const password = req.body.password;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.render('auth/signup', {
+    return res.status(422).render('auth/signup', {
       path: '/signup',
       pageTitle: 'Signup',
       isAuthenticated: false,
@@ -101,13 +103,21 @@ exports.postSignup = async (req, res, next) => {
     await setSession(req, res, newUser, '/');
     await new Email(newUser).sendWelcome();
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
 
 exports.postLogout = async (req, res, next) => {
-  await req.session.destroy();
-  res.redirect('/');
+  try {
+    await req.session.destroy();
+    res.redirect('/');
+  } catch (err) {
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
+  }
 };
 
 exports.getReset = (req, res, next) => {
@@ -124,7 +134,7 @@ exports.getReset = (req, res, next) => {
 exports.postReset = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.render('auth/reset', {
+    res.status(422).render('auth/reset', {
       path: '/reset',
       pageTitle: 'Reset Password',
       validationErrors: errors.array(),
@@ -145,7 +155,9 @@ exports.postReset = async (req, res, next) => {
     await new Email(user).passwordReset(token);
     return res.redirect('/');
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
 
@@ -166,7 +178,9 @@ exports.getNewPassword = async (req, res, next) => {
       passwordToken: token,
     });
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
 
@@ -193,6 +207,8 @@ exports.postNewPassword = async (req, res, next) => {
     await user.save();
     return res.redirect('/login');
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };

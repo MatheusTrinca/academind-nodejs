@@ -9,6 +9,7 @@ exports.getAddProduct = (req, res, next) => {
     editing: false,
     errorMessage: null,
     hasError: false,
+    validationErrors: [],
   });
 };
 
@@ -28,6 +29,7 @@ exports.postAddProduct = async (req, res, next) => {
       errorMessage: errors.array()[0].msg,
       hasError: true,
       product: { title, imageUrl, price, description },
+      validationErrors: errors.array(),
     });
   }
 
@@ -44,7 +46,18 @@ exports.postAddProduct = async (req, res, next) => {
     console.log('Created Product');
     res.redirect('/admin/products');
   } catch (err) {
-    console.log(err);
+    // res.status(422).render('admin/edit-product', {
+    //   pageTitle: 'Add Product',
+    //   path: '/admin/add-product',
+    //   editing: false,
+    //   errorMessage: 'Database Error',
+    //   hasError: true,
+    //   product: { title, imageUrl, price, description },
+    //   validationErrors: [],
+    // });
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
 
@@ -66,9 +79,12 @@ exports.getEditProduct = async (req, res, next) => {
       product: product,
       hasError: false,
       errorMessage: null,
+      validationErrors: [],
     });
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
 
@@ -95,6 +111,7 @@ exports.postEditProduct = async (req, res, next) => {
         description: updatedDesc,
         _id: prodId,
       },
+      validationErrors: errors.array(),
     });
   }
 
@@ -114,7 +131,9 @@ exports.postEditProduct = async (req, res, next) => {
     console.log('UPDATED PRODUCT!');
     res.redirect('/admin/products');
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
 
@@ -129,7 +148,9 @@ exports.getProducts = async (req, res, next) => {
       path: '/admin/products',
     });
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
 
@@ -140,6 +161,8 @@ exports.postDeleteProduct = async (req, res, next) => {
     console.log('DESTROYED PRODUCT');
     res.redirect('/admin/products');
   } catch (err) {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
   }
 };
