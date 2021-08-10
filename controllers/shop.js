@@ -2,6 +2,8 @@ const Product = require('../models/product');
 const Order = require('../models/order');
 const path = require('path');
 const fs = require('fs');
+const PDFDocument = require('pdfkit');
+const product = require('../models/product');
 
 exports.getProducts = async (req, res, next) => {
   try {
@@ -128,19 +130,78 @@ exports.getOrders = async (req, res, next) => {
   }
 };
 
-exports.getInvoice = (req, res, next) => {
+exports.getInvoice = async (req, res, next) => {
   const orderId = req.params.orderId;
-  const invoiceName = `invoice-${orderId}.pdf`;
-  const invoicePath = path.join('data', 'invoices', invoiceName);
-  fs.readFile(invoicePath, (err, data) => {
-    if (err) {
-      return next(err);
+  try {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return next(new Error('No order found'));
     }
+    if (order.user.userId.toString() !== req.user._id.toString()) {
+      return next(new Error('Unauthorized'));
+    }
+    const invoiceName = `invoice-${orderId}.pdf`;
+    const invoicePath = path.join('data', 'invoices', invoiceName);
+
+    // Gerando PDF on the fly
+    const pdfDoc = new PDFDocument();
+    pdfDoc.pipe(fs.createWriteStream(invoicePath));
+    pdfDoc.pipe(res);
+    pdfDoc.fontSize(26).text('Invoice', {
+      underline: true,
+    });
+
+    pdfDoc.text('---------------------------------');
+
+    let total = 0;
+    order.products.forEach(p => {
+      total += p.product.price * p.quantity;
+      pdfDoc
+        .fontSize(16)
+        .text(
+          `${p.product.title} - ${p.quantity}x - $ ${(
+            p.product.price * p.quantity
+          ).toFixed(2)}`
+        );
+    });
+
+    pdfDoc.fontSize(26).text('---------------------------------');
+    pdfDoc.fontSize(20).text(`Total: $ ${total.toFixed(2)}`);
+
+    pdfDoc.end();
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      'attachment;filename=' + invoiceName + '"'
+      //'attachment;filename=' + invoiceName + ''
+      'inline;filename=' + invoiceName + ''
     );
-    res.send(data);
-  });
+
+    // fs.readFile(invoicePath, (err, data) => {
+    //   if (err) {
+    //     return next(err);
+    //   }
+    //   res.setHeader('Content-Type', 'application/pdf');
+    //   res.setHeader(
+    //     'Content-Disposition',
+    //     //'attachment;filename=' + invoiceName + ''
+    //     'inline;filename=' + invoiceName + ''
+    //   );
+    //   res.send(data);
+    // });
+
+    // AQUI COM STREAM
+    //const file = fs.createReadStream(invoicePath);
+    // res.setHeader('Content-Type', 'application/pdf');
+    // res.setHeader(
+    //   'Content-Disposition',
+    //   //'attachment;filename=' + invoiceName + ''
+    //   'inline;filename=' + invoiceName + ''
+    // );
+    // file.pipe(res);
+  } catch (err) {
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error);
+  }
 };
