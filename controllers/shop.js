@@ -8,12 +8,22 @@ const product = require('../models/product');
 const ITEMS_PER_PAGE = 2;
 
 exports.getProducts = async (req, res, next) => {
+  let page = +req.query.page || 1;
   try {
-    const products = await Product.find();
+    const totalItems = await Product.find().countDocuments();
+    const products = await Product.find()
+      .skip((page - 1) * ITEMS_PER_PAGE)
+      .limit(ITEMS_PER_PAGE);
     res.render('shop/product-list', {
       prods: products,
-      pageTitle: 'All Products',
+      pageTitle: 'Products',
       path: '/products',
+      currentPage: page,
+      hasNextPage: totalItems > ITEMS_PER_PAGE * page,
+      hasPreviousPage: page > 1,
+      nextPage: page + 1,
+      previousPage: page - 1,
+      lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
     });
   } catch (err) {
     const error = new Error(err);
